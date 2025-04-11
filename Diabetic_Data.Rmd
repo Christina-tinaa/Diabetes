@@ -1,6 +1,6 @@
 ---
-title: "Regularized Regression Modeling(Diabetes Data)"
-author: "CHRISTINA THOMPSON ACQUAH"
+title: 'Regularization Techniques (Diabetes Data)'
+author: "Christina Thompon Acquah"
 date: " "
 output:
   html_document: 
@@ -22,7 +22,7 @@ output:
     toc: yes
     toc_depth: 4
     fig_caption: yes
-    number_sections: no
+    number_sections: yes
     fig_width: 3
     fig_height: 3
 editor_options: 
@@ -36,18 +36,18 @@ editor_options:
 /* Cascading Style Sheets (CSS) is a stylesheet language used to describe the presentation of a document written in HTML or XML. it is a simple mechanism for adding style (e.g., fonts, colors, spacing) to Web documents. */
 
 h1.title {  /* Title - font specifications of the report title */
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
-  color: DarkRed;
+  color: navy;
   text-align: center;
   font-family: "Gill Sans", sans-serif;
 }
 h4.author { /* Header 4 - font specifications for authors  */
   font-size: 18px;
-  font-weight: bold;
   font-family: system-ui;
   color: navy;
   text-align: center;
+  font-weight: bold;
 }
 h4.date { /* Header 4 - font specifications for the date  */
   font-size: 18px;
@@ -94,29 +94,60 @@ p { background-color:white; }
 </style>
 ```
 
-
 ```{r setup, include=FALSE}
-# Load required libraries (installation should be done manually in advance)
-library(knitr)
+# code chunk specifies whether the R code, warnings, and output 
+# will be included in the output files.
+if (!require("knitr")) {
+   install.packages("knitr")
+   library(knitr)
+}
+if (!require("tidyverse")) {
+   install.packages("tidyverse")
 library(tidyverse)
-library(palmerpenguins)
+}
+if (!require("GGally")) {
+   install.packages("GGally")
 library(GGally)
-library(naniar)
-library(pool)
-library(DBI)
-library(RMySQL)
-library(randomForest)
-library(broom)
-
-# Set chunk options
-knitr::opts_chunk$set(
-  echo = TRUE,
-  warning = FALSE, 
-  results = TRUE, 
-  message = FALSE,
-  comment = NA
-)
+}
+if (!require("glmnet")) {
+   install.packages("glmnet")
+library(glmnet)
+}
+if (!require("caret")) {
+   install.packages("caret")
+library(caret)
+}
+if (!require("MASS")) {
+   install.packages("MASS")
+library(MASS)
+}
+if (!require("mlbench")) {
+   install.packages("mlbench")
+library(mlbench)
+}
+if (!require("pROC")) {
+   install.packages("pROC")
+library(pROC)
+}
+if (!require("plotly")) {
+   install.packages("plotly")
+library(plotly)
+}
+if (!require("pander")) {
+   install.packages("pander")
+library(pander)
+}
+### 
+knitr::opts_chunk$set(echo = TRUE,       
+                      warning = FALSE,    
+                      results = TRUE,    
+                      message = FALSE,
+                      comment = NA
+                      )  
 ```
+
+
+
 
 # . Introduction
 Diabetes is a chronic condition that poses significant challenges to healthcare systems worldwide. Managing diabetes in hospitalized patients is crucial to minimizing complications and reducing readmission rates. This study aims to investigate factors associated with hospital readmissions among diabetic patients using the Health Facts - Diabetes Data, comprising over 100,000 patient encounters from 1999 to 2008. The analysis will focus on identifying key demographic and clinical predictors influencing readmission, with a specific emphasis on the impact of HbA1c measurements. Through predictive modeling and regularized regression techniques, the study aims to develop robust models to guide clinical decision-making and improve diabetes management.
@@ -479,7 +510,7 @@ Limitations related to data coding and model assumptions highlight opportunities
 
 Overall, these models not only satisfy the project requirements but also offer actionable insights for diabetes management. Future work should focus on model refinement and external validation to further enhance predictive accuracy.
 
-#Part 2
+# .SVM
 
 Building on the regularized linear models explored in Part I, Part II applies Support Vector Machines (SVM) to both regression and classification tasks. SVMs are powerful for capturing complex, non-linear patterns in data using kernel functions like the radial basis function (RBF), while still supporting linear margins when appropriate.
 
@@ -610,7 +641,7 @@ ggplot(data.frame(Residuals = pred_rbf - test_scaled$time_in_hospital),
 The Linear SVM model demonstrated better performance on this dataset (MSE: 0.613) compared to the RBF kernel (MSE: 0.665).
 This suggests that a linear relationship is sufficient for modeling time_in_hospital using the selected predictors, or that the RBF model may require further tuning to reach its full potential.
 
-## SVM CLASSIFICATION (Linear + RBF)
+# .SVM CLASSIFICATION (Linear + RBF)
 
 In this section, we evaluate the performance of classification models in predicting 30-day hospital readmission using LASSO Logistic Regression and Support Vector Machines (SVM) with both linear and RBF kernels. After appropriate preprocessing, including scaling and feature encoding, each model was trained on a stratified subset of the data. To assess their discriminative ability, we computed the Area Under the ROC Curve (AUC) and visualized the ROC curves. This comparative analysis helps identify which classifier best separates positive and negative readmission cases, and provides insight into the generalizability and robustness of each approach.
 
@@ -622,9 +653,8 @@ library(e1071)
 library(pROC)
 library(dplyr)
 
-# -----------------------------------
+
 # 1. Prepare binary classification dataset
-# -----------------------------------
 data_cls <- data %>%
   filter(readmitted %in% c("<30", "NO")) %>%
   mutate(readmit_binary = ifelse(readmitted == "<30", 1, 0))
@@ -635,9 +665,8 @@ idx_cls <- createDataPartition(data_cls$readmit_binary, p = 0.7, list = FALSE)
 train_cls <- data_cls[idx_cls, ]
 test_cls <- data_cls[-idx_cls, ]
 
-# -----------------------------------
 # 2. Scale only predictors (exclude outcome)
-# -----------------------------------
+
 pp_cls <- preProcess(train_cls[, -which(names(train_cls) == "readmit_binary")], method = c("center", "scale"))
 train_scaled <- predict(pp_cls, train_cls[, -which(names(train_cls) == "readmit_binary")])
 test_scaled <- predict(pp_cls, test_cls[, -which(names(test_cls) == "readmit_binary")])
@@ -646,9 +675,8 @@ test_scaled <- predict(pp_cls, test_cls[, -which(names(test_cls) == "readmit_bin
 train_cls_scaled <- cbind(train_scaled, readmit_binary = train_cls$readmit_binary)
 test_cls_scaled <- cbind(test_scaled, readmit_binary = test_cls$readmit_binary)
 
-# --------------------------------------------------
 # 3. Create model matrices for LASSO & SVM
-# --------------------------------------------------
+
 X_logit <- model.matrix(readmit_binary ~ ., data = train_cls_scaled)[, -1]
 y_logit <- train_cls_scaled$readmit_binary
 X_logit_test <- model.matrix(readmit_binary ~ ., data = test_cls_scaled)[, -1]
@@ -661,32 +689,30 @@ y_svm_train <- train_cls_scaled$readmit_binary
 train_svm_df <- data.frame(X_svm_train, readmit_binary = factor(y_svm_train, levels = c(0, 1)))
 test_svm_df <- data.frame(X_svm_test)
 
-# -----------------------------------
 # 4. Train Models
-# -----------------------------------
 
-# 🔸 LASSO Logistic Regression
+#  LASSO Logistic Regression
 cv_lasso_logit <- cv.glmnet(X_logit, y_logit, alpha = 1, family = "binomial")
 lasso_logit_model <- glmnet(X_logit, y_logit, alpha = 1, family = "binomial", lambda = cv_lasso_logit$lambda.min)
 prob_lasso <- predict(lasso_logit_model, newx = X_logit_test, type = "response")
 
-# 🔸 SVM Linear with probabilities
+#  SVM Linear with probabilities
 svm_linear_cls <- svm(readmit_binary ~ ., data = train_svm_df, kernel = "linear", probability = TRUE)
 svm_pred_linear <- predict(svm_linear_cls, test_svm_df, probability = TRUE)
 probs_linear <- attr(svm_pred_linear, "probabilities")
 print(colnames(probs_linear))  # check class labels
 prob_linear <- probs_linear[, which.max(colnames(probs_linear))]  # get class 1 prob
 
-# 🔸 SVM RBF with probabilities
+#  SVM RBF with probabilities
 svm_rbf_cls <- svm(readmit_binary ~ ., data = train_svm_df, kernel = "radial", probability = TRUE)
 svm_pred_rbf <- predict(svm_rbf_cls, test_svm_df, probability = TRUE)
 probs_rbf <- attr(svm_pred_rbf, "probabilities")
 print(colnames(probs_rbf))  # check class labels
 prob_rbf <- probs_rbf[, which.max(colnames(probs_rbf))]  # get class 1 prob
 
-# -----------------------------------
+
 # 5. ROC + AUC Calculation & Plot
-# -----------------------------------
+
 
 # Make sure outcome is numeric (0/1)
 y_logit_test <- as.numeric(as.character(y_logit_test))
@@ -719,16 +745,12 @@ print(colnames(probs_linear))
 
 
 
-#Conclusion
+# .Conclusion
  To evaluate the effectiveness of different classification models in predicting 30-day hospital readmission, we compared LASSO Logistic Regression with Support Vector Machines (SVM) using both linear and RBF kernels. In an earlier run, the LASSO model achieved a modest AUC of 0.6082, slightly outperforming the SVM classifiers, which hovered around AUC = 0.5, suggesting near-random performance. The ROC curves from that experiment confirmed this, with all models clustering around the diagonal line — an indication of limited discriminative power.
 
 However, after refining the dataset and ensuring proper feature scaling and modeling inputs, the re-evaluated models — LASSO Logistic, SVM Linear, and SVM RBF — each achieved an AUC of 1.0, representing perfect classification on the test set. While this result is visually supported by the sharp ROC curves hitting the top-left corner, it likely reflects data overfitting or strong class separability in the current partition, rather than a truly generalizable solution.
 
 Overall, LASSO Logistic Regression demonstrated consistently strong — albeit varying  performance across scenarios, outperforming SVM in the more realistic first comparison and matching it in the idealized second. These results reinforce LASSO's utility as a reliable baseline model, especially when class imbalance or feature sparsity is present. Nonetheless, to enhance robustness and applicability in clinical decision-making, further validation, feature engineering, and resampling strategies are recommended to reduce overfitting risk and improve generalization.
-
-
-
-
 
 
 
